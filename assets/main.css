@@ -177,6 +177,7 @@ body {
 	font-size: 18px;
 	font-weight: 300;
 	text-align: center;
+
 }
 
 /* faq section | right side */
@@ -207,4 +208,20 @@ body {
 	-ms-transform: rotate(90deg);
 	-o-transform: rotate(90deg);
 	transform: rotate(90deg);
+}
+
+
+#login_button {
+	width: 140px;
+	background-color: #a3d063;
+	border-radius: 50px;
+	cursor: pointer;
+	padding: 12px;
+
+	color: #fff;
+	font-size: 18px;
+	font-weight: 300;
+	text-align: center;
+	display: block;
+	margin: auto;
 }
