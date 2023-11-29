@@ -213,7 +213,17 @@ function retrieveRunStatus(thread_id, run_id) {
 					getResponse(thread_id);
 					showBotMessage("Sending request to server...");
 					var botMessageString = localStorage.getItem('botMessage');
-					var botMessage = JSON.parse(botMessageString);
+					// Replace curly quotes (and any other non-standard quotes) with standard quotes
+					var botMessageString = botMessageString.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
+
+					// Now try parsing
+					try {
+						var botMessage = JSON.parse(botMessageString);
+						// Proceed with using botMessage
+					} catch (e) {
+						console.error('Error parsing JSON:', e);
+						// Handle parsing error
+					}
 					console.log('Stored botMessage:', typeof (localStorage.getItem('botMessage')));
 					console.log('After parsing:', typeof (JSON.parse(localStorage.getItem('botMessage'))));
 					// var botMessageString = localStorage.getItem('botMessage');
