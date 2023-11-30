@@ -3,3 +3,5 @@
 .DS_Store
 node_modules
 *.pyc
+assistant-test.ipynb
+test-main.js
