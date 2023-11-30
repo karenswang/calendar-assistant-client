@@ -187,7 +187,3 @@ def get_latest_message(client, thread, message):
     thread_id=thread.id, order="asc", after=message.id
 )
     return messages.data[0].content[0].text.value
-
-
-bot_response = main("User's message here")
-print(bot_response)
