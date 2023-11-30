@@ -7,6 +7,22 @@ import time
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Main function to handle the entire process
+def main(user_message):
+    # Initialize OpenAI client
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+    # Start a new thread and add default messages
+    thread = start_thread_and_add_default_msg(client)
+
+    # Submit user message
+    run = submit_message(client, thread, user_message)
+
+    # Wait for the run to complete and get the response
+    bot_message = wait_on_run(client, run, thread)
+
+    return bot_message
+
 def trackEvent(email, scope, groupBy=None, analysis=True):
     url = "http://localhost:3000/track"
     headers = {'Content-Type': 'application/json'}
@@ -88,9 +104,6 @@ def deleteEvent(email, eventId):
 # def show_json(obj):
 #     display(json.loads(obj.model_dump_json()))
 
-# Initialize OpenAI 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
 # start a new thread
 def start_thread_and_add_default_msg(client):
     thread = client.beta.threads.create()
@@ -102,6 +115,7 @@ def start_thread_and_add_default_msg(client):
     client.beta.threads.messages.create(
         thread_id=thread.id, role="user", content=f"Current date and time is {datetime}"
     )
+    return thread
 
 def get_response(client, thread):
     return client.beta.threads.messages.list(thread_id=thread.id, order="asc")
@@ -173,3 +187,7 @@ def get_latest_message(client, thread, message):
     thread_id=thread.id, order="asc", after=message.id
 )
     return messages.data[0].content[0].text.value
+
+
+bot_response = main("User's message here")
+print(bot_response)
