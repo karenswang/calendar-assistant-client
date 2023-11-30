@@ -1,7 +1,4 @@
 // this chatbot frontend is bootstrapped from PandaWhoCodes's chatbot frontend: https://github.com/PandaWhoCodes/chatbot-frontend
-// const axios = require('axios');
-// require('dotenv').config();
-
 
 /**
  * Returns the current datetime for the message creation.
@@ -68,41 +65,23 @@ function showUserMessage(message, datetime) {
 		time: datetime,
 		message_side: 'right',
 	});
-	const thread_id = localStorage.getItem('threadId');
-	// submit message for run
-	$.ajax({
-		url: `https://api.openai.com/v1/threads/${thread_id}/runs`,
-		type: 'POST',
-		headers: {
-            'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`, // Ensure this key is not exposed in client-side code
-            'Content-Type': 'application/json',
-			'OpenAI-Beta': 'assistants=v1'
-        },
-        data: JSON.stringify({
-            // assistant_id: localStorage.getItem('assistantId'),
-			assistant_id: "asst_KlLg6WZIyzYln5MR7clGLHN1",}),
-        success: function(response) {
-            console.log(response);
-			localStorage.setItem('runId', response.id);
-			retrieveRunStatus(localStorage.getItem('threadId'), localStorage.getItem('runId'));
-            // Handle success
-        },
-        error: function(error) {
-            console.error(error);
-            // Handle errors
-        }
-    });
 }
 
 /**
  * Displays the chatbot message on the chat screen. This is the left side message.
  */
 function showBotMessage(message, datetime) {
-	renderMessageToScreen({
-		text: message,
-		time: datetime,
-		message_side: 'left',
-	});
+    // Convert the message to a JSON string, if it's an object
+    if (typeof message === 'object') {
+        message = JSON.stringify(message, null, 2); // Indent with 2 spaces for readability
+    }
+	message = linkify(message);
+
+    renderMessageToScreen({
+        text: `<pre>${message}</pre>`, // Wrap the message in a <pre> tag to preserve formatting
+        time: datetime,
+        message_side: 'left',
+    });
 }
 
 /**
@@ -110,62 +89,28 @@ function showBotMessage(message, datetime) {
  */
 $('#send_button').on('click', function (e) {
 	// get and show message and reset input
-	let userInput = $('#msg_input').val();  // Store user input in a variable
-
-	// save current message to thread
+	let userMessage = $('#msg_input').val();
+	showUserMessage(userMessage);
+	var apiKey = localStorage.getItem('openAIKey');
 	$.ajax({
-        url: `https://api.openai.com/v1/threads/${localStorage.getItem('threadId')}/messages`,
+        url: 'http://127.0.0.1:5000/get_response',  // Flask endpoint URL
         type: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`, // Ensure this key is not exposed in client-side code
-            'Content-Type': 'application/json',
-			'OpenAI-Beta': 'assistants=v1'
-        },
-        data: JSON.stringify({
-            role: "user",
-            content: userInput
-        }),
+        contentType: 'application/json',
+        data: JSON.stringify({ message: userMessage, api_key: apiKey }),
         success: function(response) {
-            console.log(response);
-			showUserMessage(userInput);  // Display user message
-			$('#msg_input').val('');     // Clear the input field
+            showBotMessage(response.response);  // Display the bot's response
         },
         error: function(error) {
-            console.error(error);
-            // Handle errors
+            console.error('Error:', error);
+            showBotMessage('Sorry, there was an error processing your request.');
         }
     });
-	
+
+	$('#msg_input').val('');
 
 	// show bot message
 	setTimeout(function () {
 		showBotMessage("Working on it...");
-		// run_id = localStorage.getItem('runId');
-		// thread_id = localStorage.getItem('threadId');
-		// retrieveRunStatus(thread_id, run_id);
-
-
-
-		// $.ajax({
-		// 	url: `https://api.openai.com/v1/threads/${thread_id}/runs/${run_id}/submit_tool_outputs`,
-		// 	type: 'POST',
-		// 	headers: {
-		// 		'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`, // Ensure this key is not exposed in client-side code
-		// 		'Content-Type': 'application/json',
-		// 		'OpenAI-Beta': 'assistants=v1'
-		// 	},
-		// 	data: JSON.stringify({
-		// 		assistant_id: localStorage.getItem('assistantId'),
-		// 	}),
-		// 	success: function(response) {
-		// 		console.log(response);
-		// 		// Handle success
-		// 	},
-		// 	error: function(error) {
-		// 		console.error(error);
-		// 		// Handle errors
-		// 	}
-		// });
 	}, 300);
 });
 
@@ -192,154 +137,22 @@ function randomstring(length = 20) {
  */
 $(window).on('load', function () {
 	showBotMessage('Hello there! To better assist you, please log in first.');
-	// assistant().catch(console.error);
-    // thread().catch(console.error);
 });
 
-function retrieveRunStatus(thread_id, run_id) {
-    let intervalId = setInterval(() => {
-        $.ajax({
-            url: `https://api.openai.com/v1/threads/${thread_id}/runs/${run_id}`,
-            type: 'GET',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`,
-                'Content-Type': 'application/json',
-                'OpenAI-Beta': 'assistants=v1'
-            },
-            success: function(response) {
-                console.log(response);
-                if (response.status === "completed") {
-                    clearInterval(intervalId); // Stop checking
-					getResponse(thread_id);
-					showBotMessage("Sending request to server...");
-					var botMessageString = localStorage.getItem('botMessage');
-					// Replace curly quotes (and any other non-standard quotes) with standard quotes
-					var botMessageString = botMessageString.replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"');
+function linkify(inputText) {
+    var replacedText, replacePattern1, replacePattern2, replacePattern3;
 
-					// Now try parsing
-					try {
-						var botMessage = JSON.parse(botMessageString);
-						// Proceed with using botMessage
-					} catch (e) {
-						console.error('Error parsing JSON:', e);
-						// Handle parsing error
-					}
-					console.log('Stored botMessage:', typeof (localStorage.getItem('botMessage')));
-					console.log('After parsing:', typeof (JSON.parse(localStorage.getItem('botMessage'))));
-					// var botMessageString = localStorage.getItem('botMessage');
+    //URLs starting with http://, https://, or ftp://
+    replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+    replacedText = inputText.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
 
-					// // Check if it's a string and not an object
-					// if (typeof botMessageString === 'string') {
-					// 	var botMessage = JSON.parse(botMessageString);
-					// } else {
-					// 	console.error('botMessageString is not a string:', botMessageString);
-					// }
+    //URLs starting with "www." (without // before it, or it'd re-link the ones done above).
+    replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+    replacedText = replacedText.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
 
-					// call our own API
-					if (localStorage.getItem('endPointChoice') == "trackEvent") {
-						$.ajax({
-							url: 'http://localhost:3000/track',
-							type: 'GET',
-							contentType: 'application/json',
-							data: botMessage,
-							success: function(response) {
-								var response = JSON.parse(response);
-								showBotMessage(response);
-								console.log(response)
-								console.log("track endpoint called");
-							},
-							error: function(xhr, status, error) {
-								console.error("Error in calling track endpoint: ", status, error);
-							}
-						});
-					} else if (localStorage.getItem('endPointChoice') == "manageEvent") {
-						$.ajax({
-							url: 'http://localhost:3000/manage',
-							type: 'POST',
-							contentType: 'application/json',
-							data: JSON.stringify(botMessage),
-							success: function(response) {
-								var response = JSON.parse(response);
-								showBotMessage(response);
-								console.log(response)
-								console.log("manage endpoint called");
-							},
-							error: function(xhr, status, error) {
-								console.error("Error in calling manage endpoint: ", status, error);
-							}
-						});
-					}
-					// add other endpoints	
-                } else if (response.status === "requires_action") {
-                    // clearInterval(intervalId); // Stop checking
-					const tool_call_id = response.required_action.submit_tool_outputs.tool_calls[0].id;
-					var function_called = response.required_action.submit_tool_outputs.tool_calls[0].function.name;
-					localStorage.setItem('endPointChoice', function_called);
-                    provideOutput(thread_id, run_id, tool_call_id); // Call provideOutput function
-                }
-                // If status is "queued", do nothing and the interval will make the request again
-            },
-            error: function(error) {
-                console.error(error);
-                clearInterval(intervalId); // Stop checking on error
-                // Handle errors
-            }
-        });
-    }, 5000); // Repeat every 5 seconds
-}
+    //Change email addresses to mailto:: links.
+    replacePattern3 = /(([a-zA-Z0-9\-_.])+@[a-zA-Z0-9\-_.]+\.[a-zA-Z]{2,5})/gim;
+    replacedText = replacedText.replace(replacePattern3, '<a href="mailto:$1">$1</a>');
 
-
-function provideOutput(thread_id, run_id, tool_call_id) {
-    $.ajax({
-        url: `https://api.openai.com/v1/threads/${thread_id}/runs/${run_id}/submit_tool_outputs`,
-        type: 'POST',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v1'
-        },
-        data: JSON.stringify({
-            tool_outputs: [
-                {
-                    tool_call_id: tool_call_id,
-					output: " "
-				}
-            ]
-        }),
-        success: function(response) {
-            console.log(response);
-			console.log("output submitted");
-            // Handle success
-        },
-        error: function(error) {
-            console.error(error);
-            // Handle errors
-        }
-    });
-}
-
-function getResponse(thread_id) {
-    $.ajax({
-        url: `https://api.openai.com/v1/threads/${thread_id}/messages`,
-        type: 'GET',
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('openAIKey')}`,
-            'Content-Type': 'application/json',
-            'OpenAI-Beta': 'assistants=v1'
-        },
-		// add query parameters
-		data: {
-			limit: 1,
-			order: "desc"
-		},
-        success: function(response) {
-			localStorage.setItem('botMessage', JSON.stringify(response.data[0].content[0].text.value));
-			console.log("latest message retrieved: ", response.data[0].content[0].text.value);
-			// Handle success
-        },
-        error: function(error) {
-            console.error(error);
-            // Handle errors
-        }
-    });
+    return replacedText;
 }

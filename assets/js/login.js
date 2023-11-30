@@ -5,6 +5,7 @@ $('#login_button').on('click', function() {
     var openAIKey = $('#openAIKey').val();
 
     var data = {
+        orgId: 1,
         email: email,
         clientId: clientId,
         clientSecret: clientSecret,

@@ -6,21 +6,29 @@ import datetime
 import time
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+global_thread_id = None
 
 # Main function to handle the entire process
-def main(user_message):
+def main(user_message, api_key):
     # Initialize OpenAI client
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    client = OpenAI(api_key=api_key)
 
     # Start a new thread and add default messages
     thread = start_thread_and_add_default_msg(client)
 
     # Submit user message
-    run = submit_message(client, thread, user_message)
+    run, last_message = submit_message(client, thread, user_message)
 
-    # Wait for the run to complete and get the response
-    bot_message = wait_on_run(client, run, thread)
-
+    run = wait_on_run(client, run, thread)
+    # print("run status: ", run.status)
+    if run.status == "requires_action":
+        print("requires action, submitting outputs")
+        submit_outputs(client, thread, run)
+        run = wait_on_run_after_requires_action(client, run, thread)
+        
+    # print("run status after submitting outputs: ", run.status)
+    # if run.status != "requires_action":
+    bot_message = get_latest_message(client, thread, last_message)
     return bot_message
 
 def trackEvent(email, scope, groupBy=None, analysis=True):
@@ -55,7 +63,7 @@ def createEvent(email, startTime, endTime, timezone="America/New_York", summary=
     }
 
     # Remove keys with None values
-    data = {k: v for k, v in data.items() if v is not None}
+    # data = {k: v for k, v in data.items() if v is not None}
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.json()
@@ -100,21 +108,33 @@ def deleteEvent(email, eventId):
     response = requests.post(url, headers=headers, data=json.dumps(data))
     return response.json()
 
+def getAnalytics(orgId):
+    url = "http://localhost:3000/analytics"
+    headers = {'Content-Type': 'application/json'}
 
-# def show_json(obj):
-#     display(json.loads(obj.model_dump_json()))
+    data = {
+        "orgId": "1"
+    }
+
+    response = requests.get(url, headers=headers, data=json.dumps(data))
+    return response.json()
 
 # start a new thread
 def start_thread_and_add_default_msg(client):
-    thread = client.beta.threads.create()
-    datetime = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+    global global_thread_id
+    if global_thread_id is None:
+        thread = client.beta.threads.create()
+        current_datetime = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
-    client.beta.threads.messages.create(
-        thread_id=thread.id, role="user", content="my email is sw3709@columbia.edu"
-    )
-    client.beta.threads.messages.create(
-        thread_id=thread.id, role="user", content=f"Current date and time is {datetime}"
-    )
+        client.beta.threads.messages.create(
+            thread_id=thread.id, role="user", content="my email is sw3709@columbia.edu"
+        )
+        client.beta.threads.messages.create(
+            thread_id=thread.id, role="user", content=f"Current date and time is {current_datetime}"
+        )
+        global_thread_id = thread.id
+    else:
+        thread = client.beta.threads.retrieve(global_thread_id)
     return thread
 
 def get_response(client, thread):
@@ -128,39 +148,63 @@ def pretty_print(messages):
 
 # Add a new message to the thread and start a run
 def submit_message(client, thread, user_message):
-    client.beta.threads.messages.create(
+    message = client.beta.threads.messages.create(
         thread_id=thread.id, role="user", content=user_message
     )
+
     return client.beta.threads.runs.create(
         thread_id=thread.id,
         assistant_id="asst_2x9WVVd9cMQObO4gFsMhIrbC",
         instructions="Use the approprite function tool to achieve user's specific request."
-    ) 
+    ), message    
     
 # See all messages in the thread
 def see_all_messages(thread):
     pretty_print(get_response(thread))
     
+
 def wait_on_run(client, run, thread):
-    while run.status in ["queued", "in_progress", "action_required"]:
+    while run.status == "queued" or run.status == "in_progress":
         run = client.beta.threads.runs.retrieve(
             thread_id=thread.id,
             run_id=run.id,
         )
+        time.sleep(2)    
+    return run
+
+def wait_on_run_after_requires_action(client, run, thread):
+    while run.status == "queued" or run.status == "in_progress" or run.status == "requires_action":
+        run = client.beta.threads.runs.retrieve(
+            thread_id=thread.id,
+            run_id=run.id,
+        )
+        time.sleep(2)    
+    return run
+
+# def wait_on_run(client, run, thread, message):
+#     while run.status in ["queued", "in_progress", "requires_action"]:
+#         run = client.beta.threads.runs.retrieve(
+#             thread_id=thread.id,
+#             run_id=run.id,
+#         )
         
-        # Check for "action_required" status and handle it
-        if run.status == "action_required":
-            submit_outputs(thread, run)
+#         # Check for "requires_action" status and handle it
+#         if run.status == "requires_action":
+#             submit_outputs(client, thread, run)
+#         #     run = client.beta.threads.runs.retrieve(
+#         #     thread_id=thread.id,
+#         #     run_id=run.id,
+#         # )
 
-        # Only continue the loop if the status is still "queued" or "in_progress"
-        if run.status not in ["queued", "in_progress"]:
-            messages = client.beta.threads.messages.list(thread_id=thread.id)
-            bot_message = get_latest_message(thread, messages)
-            break
+#         # Only continue the loop if the status is still "queued" or "in_progress"
+#         if run.status in ["queued", "in_progress"]:
+#             time.sleep(2)
+#             # messages = client.beta.threads.messages.list(thread_id=thread.id)
+#             bot_message = get_latest_message(client, thread, message)
+#             break
 
-        time.sleep(2)
-
-    return bot_message
+#         time.sleep(2)
+#     return bot_message
 
 
 
@@ -170,6 +214,7 @@ def submit_outputs(client, thread, run):
     name = tool_call.function.name
     arguments = json.loads(tool_call.function.arguments)
     responses = globals()[name](**arguments)
+    # print("API responses: ", responses)
     
     run = client.beta.threads.runs.submit_tool_outputs(
     thread_id=thread.id,
@@ -186,4 +231,7 @@ def get_latest_message(client, thread, message):
     messages = client.beta.threads.messages.list(
     thread_id=thread.id, order="asc", after=message.id
 )
+    # print("last_message: ", message)
+    # print("messages: ", messages)
+    # print("returned message: ", messages.data[0].content[0].text.value)
     return messages.data[0].content[0].text.value

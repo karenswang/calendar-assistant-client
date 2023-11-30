@@ -94,6 +94,17 @@ body {
 	pointer-events: none;
 }
 
+.message .text_wrapper .text pre {
+    background-color: transparent; /* Removes any background color */
+    white-space: pre-wrap;         /* Allows text wrapping */
+    word-break: break-all;         /* Ensures long text breaks properly */
+    font-family: inherit;          /* Keeps the font consistent with your design */
+    margin: 0;                     /* Removes default margin */
+    padding: 0;                    /* Removes default padding */
+    border: none;                  /* Removes any borders */
+}
+
+
 .messages .message .text_wrapper::after {
 	border-width: 13px;
 	margin-top: 0px;
@@ -226,3 +237,4 @@ body {
 	display: block;
 	margin: auto;
 }
+
