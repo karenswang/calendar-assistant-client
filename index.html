@@ -34,7 +34,7 @@
 				<div class="chat_window">
 
 					<div class="top_menu">
-						<div class="title">ChatBot - Jarvis</div>
+						<div class="title"> Google Calendar Assistant Chatbot </div>
 					</div>
 
 					<!-- dynamically rendered -->
@@ -44,6 +44,9 @@
 					<div class="bottom_wrapper">
 						<input id="msg_input" placeholder="Say Hi to begin chat..." />
 						<div id="send_button" class="app_button_1">Send</div>
+						<label for="toggleExplore">Explore events?</label>
+						<input type="checkbox" id="toggleExplore">
+
 					</div>
 
 				</div>
@@ -66,13 +69,18 @@
 							<div class="panel-heading">
 								<h4 class="panel-title">
 									<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
-										href="#collapse1">Lorem ipsum</a>
+										href="#collapse1">User guide</a>
 								</h4>
 							</div>
 							<div id="collapse1" class="panel-collapse collapse in">
 								<div class="panel-body">
-									Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
-									mollit anim id est laborum
+									Log in using your Google calendar credentials and OpenAI api key to begin chat. 
+									<br><br>
+									<p style="font-weight: 600;">Manage calendar:</p>
+									You can ask the assistant to create events with details, track events within certain time frame, delete events, update events and more.
+									<br><br>
+									<p style="font-weight: 600;">Explore events:</p>
+									You can also explore events by clicking on the "Explore events?" checkbox. The assistant will then ask for a location and it will return all events in that location.
 								</div>
 							</div>
 						</div>
@@ -96,7 +104,7 @@
 						<!-- help - 1 -->
 						<div class="panel panel-default">
 							<div id="collapse1" class="panel-collapse collapse in">
-								<div class="panel-body">
+								<div class="login-panel-body">
 									Please enter your Google calendar credentials and OpenAI api key to login first.
                                     <div class="login_form">
                                         <input type="email" id="email" placeholder="Email">
@@ -123,8 +131,9 @@
 	</script>
 
 	<!-- custom scripts -->
-	<script src="assets/main.js"></script>
-    <script src="assets/login.js"></script>
+	<script src="main.js"></script>
+    <script src="assets/js/login.js"></script>
+	<!-- <script src="assets/js/assistant.js"></script> -->
 </body>
 
 </html>

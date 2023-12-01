@@ -1,3 +1,5 @@
+// this chatbot frontend is bootstrapped from PandaWhoCodes's chatbot frontend: https://github.com/PandaWhoCodes/chatbot-frontend
+
 /**
  * Returns the current datetime for the message creation.
  */
@@ -69,11 +71,17 @@ function showUserMessage(message, datetime) {
  * Displays the chatbot message on the chat screen. This is the left side message.
  */
 function showBotMessage(message, datetime) {
-	renderMessageToScreen({
-		text: message,
-		time: datetime,
-		message_side: 'left',
-	});
+    // Convert the message to a JSON string, if it's an object
+    if (typeof message === 'object') {
+        message = JSON.stringify(message, null, 2); // Indent with 2 spaces for readability
+    }
+	message = linkify(message);
+
+    renderMessageToScreen({
+        text: `<pre>${message}</pre>`, // Wrap the message in a <pre> tag to preserve formatting
+        time: datetime,
+        message_side: 'left',
+    });
 }
 
 /**
@@ -81,12 +89,35 @@ function showBotMessage(message, datetime) {
  */
 $('#send_button').on('click', function (e) {
 	// get and show message and reset input
-	showUserMessage($('#msg_input').val());
+	let userMessage = $('#msg_input').val();
+	var apiKey = localStorage.getItem('openAIKey');
+
+	let isExploreMode = $('#toggleExplore').is(':checked'); // Check if the toggle is checked
+
+    // Decide which endpoint to call based on the toggle state
+    let url = isExploreMode ? 'http://127.0.0.1:5000/get_explore_response' : 'http://127.0.0.1:5000/get_response';
+
+	showUserMessage(userMessage);
+	// get_response
+	$.ajax({
+        url: url,  // Flask endpoint URL
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ message: userMessage, api_key: apiKey }),
+        success: function(response) {
+            showBotMessage(response.response);  // Display the bot's response
+        },
+        error: function(error) {
+            console.error('Error:', error);
+            showBotMessage('Sorry, there was an error processing your request.');
+        }
+    });
+
 	$('#msg_input').val('');
 
 	// show bot message
 	setTimeout(function () {
-		showBotMessage(randomstring());
+		showBotMessage("Working on it...");
 	}, 300);
 });
 
@@ -112,5 +143,23 @@ function randomstring(length = 20) {
  * Set initial bot message to the screen for the user.
  */
 $(window).on('load', function () {
-	showBotMessage('Hello there! Type in a message.');
+	showBotMessage('Hello there! To better assist you, please log in first.');
 });
+
+function linkify(inputText) {
+    var replacedText, replacePattern1, replacePattern2, replacePattern3;
+
+    //URLs starting with http://, https://, or ftp://
+    replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+    replacedText = inputText.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
+
+    //URLs starting with "www." (without // before it, or it'd re-link the ones done above).
+    replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+    replacedText = replacedText.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
+
+    //Change email addresses to mailto:: links.
+    replacePattern3 = /(([a-zA-Z0-9\-_.])+@[a-zA-Z0-9\-_.]+\.[a-zA-Z]{2,5})/gim;
+    replacedText = replacedText.replace(replacePattern3, '<a href="mailto:$1">$1</a>');
+
+    return replacedText;
+}
