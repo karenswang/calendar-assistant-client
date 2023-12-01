@@ -8,5 +8,4 @@ Step to run the project:
 5. create a `.env` file, get your `Custom_Search_Engine_ID` and `Custom_Search_API_Key` from [Google Custom Search](https://developers.google.com/custom-search/v1/overview), or from the repo codespace secrets and put them in there.
 5. open the index.html
 
-Demo:
-<img src="./assets/media/demo.gif" width="500" height="300">
+Check out demo video [here](https://drive.google.com/file/d/1XThMTPjJc1QKS5Yfwm6dJz_-fGawMcR0/view?usp=sharing)
