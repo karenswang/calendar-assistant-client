@@ -90,10 +90,17 @@ function showBotMessage(message, datetime) {
 $('#send_button').on('click', function (e) {
 	// get and show message and reset input
 	let userMessage = $('#msg_input').val();
-	showUserMessage(userMessage);
 	var apiKey = localStorage.getItem('openAIKey');
+
+	let isExploreMode = $('#toggleExplore').is(':checked'); // Check if the toggle is checked
+
+    // Decide which endpoint to call based on the toggle state
+    let url = isExploreMode ? 'http://127.0.0.1:5000/get_explore_response' : 'http://127.0.0.1:5000/get_response';
+
+	showUserMessage(userMessage);
+	// get_response
 	$.ajax({
-        url: 'http://127.0.0.1:5000/get_response',  // Flask endpoint URL
+        url: url,  // Flask endpoint URL
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ message: userMessage, api_key: apiKey }),
