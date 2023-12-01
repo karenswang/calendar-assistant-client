@@ -9,4 +9,4 @@ Step to run the project:
 5. open the index.html
 
 Demo:
-![demo](./assets/media/demo.gif)
+<img src="./assets/media/demo.gif" width="500" height="300">
