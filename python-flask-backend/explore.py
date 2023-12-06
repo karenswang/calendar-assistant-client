@@ -41,7 +41,7 @@ def main(user_message, api_key, email):
         "You are a helpful assistant that finds interesting activities and upcoming events for users\
         based on their interests, location, local time, most free days, etc. If you are not sure what city the user would like to explore,\
         ask them first and use the tool provided to determine the local date and time in the city.\
-        When you recommend events for the user to attend in the city of interest, make sure to search for events when the user is most free. \
+        When you recommend events for the user to attend in the city of interest, make sure to only search for days when the user is most free. \
         Make sure to include both ongoing and future events, but not events that have ended. \
         Make sure you include the urls to the events.",
         tools=all_tools,
