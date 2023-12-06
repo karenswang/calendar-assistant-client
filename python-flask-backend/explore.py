@@ -1,6 +1,7 @@
 import os, requests, datetime, pytz
 from typing import Optional
 import urllib.parse
+from dotenv import load_dotenv
 
 from llama_index.agent import OpenAIAssistantAgent
 from llama_index.tools import FunctionTool
@@ -13,14 +14,16 @@ from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
 import json
 
+
 def main(user_message, api_key, email):
+    load_dotenv()
     # Custom Google Search Engine / Deployment ->
     #   Could be used for all users but only 10k requests are free per day.
     Custom_Search_API_KEY = os.getenv("Custom_Search_API_KEY") # get this from github codespace secrets
     Custom_Search_Engine_ID = os.getenv("Custom_Search_Engine_ID") # get this from github codespace secrets
 
     # User's OpenAI API Key
-    print("api_key: ", api_key)
+    # print("api_key: ", api_key)
     os.environ["OPENAI_API_KEY"] = api_key
 
     currentDateTimeInCity_tool = FunctionTool.from_defaults(fn=currentDateTimeInCity)
@@ -167,7 +170,7 @@ class EventInfoToolSpec(BaseToolSpec):
         Each event is delimited by triple backticks.
 
         Args:
-            query (str): The query to be passed to Google search.
+            query (str): The query to be passed to Google search. This should include dates when users are most free.
         """
         base_url = "https://www.googleapis.com/customsearch/v1"
         params = {
