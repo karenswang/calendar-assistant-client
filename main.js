@@ -91,6 +91,7 @@ $('#send_button').on('click', function (e) {
 	// get and show message and reset input
 	let userMessage = $('#msg_input').val();
 	var apiKey = localStorage.getItem('openAIKey');
+	var email = localStorage.getItem('email');
 
 	let isExploreMode = $('#toggleExplore').is(':checked'); // Check if the toggle is checked
 
@@ -103,7 +104,7 @@ $('#send_button').on('click', function (e) {
         url: url,  // Flask endpoint URL
         type: 'POST',
         contentType: 'application/json',
-        data: JSON.stringify({ message: userMessage, api_key: apiKey }),
+        data: JSON.stringify({ message: userMessage, api_key: apiKey, email: email }),
         success: function(response) {
             showBotMessage(response.response);  // Display the bot's response
         },
