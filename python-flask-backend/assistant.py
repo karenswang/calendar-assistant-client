@@ -9,12 +9,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 global_thread_id = None
 
 # Main function to handle the entire process
-def main(user_message, api_key):
+def main(user_message, api_key, email):
     # Initialize OpenAI client
     client = OpenAI(api_key=api_key)
 
     # Start a new thread and add default messages
-    thread = start_thread_and_add_default_msg(client)
+    thread = start_thread_and_add_default_msg(client, email)
 
     # Submit user message
     run, last_message = submit_message(client, thread, user_message)
@@ -120,14 +120,14 @@ def getAnalytics(orgId):
     return response.json()
 
 # start a new thread
-def start_thread_and_add_default_msg(client):
+def start_thread_and_add_default_msg(client, email):
     global global_thread_id
     if global_thread_id is None:
         thread = client.beta.threads.create()
         current_datetime = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
         client.beta.threads.messages.create(
-            thread_id=thread.id, role="user", content="my email is sw3709@columbia.edu"
+            thread_id=thread.id, role="user", content=f"my email is {email}"
         )
         client.beta.threads.messages.create(
             thread_id=thread.id, role="user", content=f"Current date and time is {current_datetime}"
