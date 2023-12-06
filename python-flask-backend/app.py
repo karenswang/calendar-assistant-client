@@ -9,14 +9,16 @@ CORS(app)
 def get_response():
     user_message = request.json.get('message')
     api_key = request.json.get('api_key')
-    response = assistant.main(user_message, api_key)  # Call the main function from your assistant script
+    email = request.json.get('email')
+    response = assistant.main(user_message, api_key, email)  # Call the main function from your assistant script
     return jsonify({'response': response})
 
 @app.route('/get_explore_response', methods=['POST'])
 def get_explore_response():
     user_message = request.json.get('message')
     api_key = request.json.get('api_key')
-    response = explore.main(user_message, api_key)  # Call the main function from your assistant script
+    email = request.json.get('email')
+    response = explore.main(user_message, api_key, email)  # Call the main function from your assistant script
     return jsonify({'response': response})
 
 if __name__ == '__main__':

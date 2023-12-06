@@ -9,12 +9,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 global_thread_id = None
 
 # Main function to handle the entire process
-def main(user_message, api_key):
+def main(user_message, api_key, email):
     # Initialize OpenAI client
     client = OpenAI(api_key=api_key)
 
     # Start a new thread and add default messages
-    thread = start_thread_and_add_default_msg(client)
+    thread = start_thread_and_add_default_msg(client, email)
 
     # Submit user message
     run, last_message = submit_message(client, thread, user_message)
@@ -44,6 +44,7 @@ def trackEvent(email, scope, groupBy=None, analysis=True):
     }
 
     response = requests.get(url, headers=headers, data=json.dumps(data))
+    print(response.json())
     return response.json()
 
 def createEvent(email, startTime, endTime, timezone="America/New_York", summary=None, description=None, location=None):
@@ -66,6 +67,7 @@ def createEvent(email, startTime, endTime, timezone="America/New_York", summary=
     # data = {k: v for k, v in data.items() if v is not None}
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    print(response.json())
     return response.json()
 
 def updateEvent(email, startTime, endTime, eventId, timezone="America/New_York", summary=None, description=None, location=None):
@@ -89,6 +91,7 @@ def updateEvent(email, startTime, endTime, eventId, timezone="America/New_York",
     # data = {k: v for k, v in data.items() if v is not None}
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    print(response.json())
     return response.json()
 
 def deleteEvent(email, eventId):
@@ -106,6 +109,7 @@ def deleteEvent(email, eventId):
     # data = {k: v for k, v in data.items() if v is not None}
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    print(response.json())
     return response.json()
 
 def getAnalytics(orgId):
@@ -117,17 +121,46 @@ def getAnalytics(orgId):
     }
 
     response = requests.get(url, headers=headers, data=json.dumps(data))
+    print(response.json())
     return response.json()
 
+def getFreeSlots(email, scope: int = 7):
+    """
+    Retrieves the free time slots for a given email address within a specified scope.
+
+    Parameters:
+    - email (str): The email address for which to retrieve free time slots.
+    - scope (int): The number of days to consider for free time slots. Between 0 and 30. Default is 7.
+
+    Returns:
+    - list: A list of dictionaries containing the date and free time for each slot.
+    """
+    
+    url = "http://localhost:3000/free-slot"
+    headers = {'Content-Type': 'application/json'}
+
+    data = {
+        "orgId": "1",
+        "email": email,
+        "scope": scope
+    }
+
+    response = requests.get(url, headers=headers, data=json.dumps(data))
+    print(response.json())
+    return response.json()
+
+    # slots = response.json().get("freeSlots", [])
+    # return slots
+
 # start a new thread
-def start_thread_and_add_default_msg(client):
+def start_thread_and_add_default_msg(client, email):
     global global_thread_id
     if global_thread_id is None:
         thread = client.beta.threads.create()
         current_datetime = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 
         client.beta.threads.messages.create(
-            thread_id=thread.id, role="user", content="my email is sw3709@columbia.edu"
+            thread_id=thread.id, role="user", content=f"my email is {email}"
         )
         client.beta.threads.messages.create(
             thread_id=thread.id, role="user", content=f"Current date and time is {current_datetime}"

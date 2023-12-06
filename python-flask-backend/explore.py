@@ -1,6 +1,7 @@
 import os, requests, datetime, pytz
 from typing import Optional
 import urllib.parse
+from dotenv import load_dotenv
 
 from llama_index.agent import OpenAIAssistantAgent
 from llama_index.tools import FunctionTool
@@ -11,18 +12,22 @@ from llama_index.tools.tool_spec.load_and_search.base import LoadAndSearchToolSp
 
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
+import json
 
-def main(user_message, api_key):
+
+def main(user_message, api_key, email):
+    load_dotenv()
     # Custom Google Search Engine / Deployment ->
     #   Could be used for all users but only 10k requests are free per day.
     Custom_Search_API_KEY = os.getenv("Custom_Search_API_KEY") # get this from github codespace secrets
     Custom_Search_Engine_ID = os.getenv("Custom_Search_Engine_ID") # get this from github codespace secrets
 
     # User's OpenAI API Key
-    print("api_key: ", api_key)
+    # print("api_key: ", api_key)
     os.environ["OPENAI_API_KEY"] = api_key
 
     currentDateTimeInCity_tool = FunctionTool.from_defaults(fn=currentDateTimeInCity)
+    mostFreeDays_tool = FunctionTool.from_defaults(fn=get_free_time)
 
     eventInfo_tools = EventInfoToolSpec(key=Custom_Search_API_KEY, engine=Custom_Search_Engine_ID)
     formatted_event_info_tool = FunctionTool.from_defaults(fn=eventInfo_tools.formatted_event_info)
@@ -30,26 +35,54 @@ def main(user_message, api_key):
     gsearch_tools = GoogleSearchToolSpec(key=Custom_Search_API_KEY, engine=Custom_Search_Engine_ID).to_tool_list()
     gsearch_load_and_search_tools = LoadAndSearchToolSpec.from_defaults(gsearch_tools[0]).to_tool_list()
 
-    all_tools = [currentDateTimeInCity_tool, formatted_event_info_tool, *gsearch_load_and_search_tools, *gsearch_tools[1::]]
-
+    all_tools = [currentDateTimeInCity_tool, formatted_event_info_tool, *gsearch_load_and_search_tools, *gsearch_tools[1::], mostFreeDays_tool]
+    
     agent = OpenAIAssistantAgent.from_new(
         name="Exploration Assistant",
         model="gpt-4-1106-preview",
         instructions=\
         "You are a helpful assistant that finds interesting activities and upcoming events for users\
-        based on their interests, location, local time, etc. If you are not sure what city the user would like to explore,\
+        based on their interests, location, local time, most free days, etc. If you are not sure what city the user would like to explore,\
         ask them first and use the tool provided to determine the local date and time in the city.\
-        When you recommend events for the user to attend in the city of interest, make sure the events are not ended yet.\
-        Make sure you include events that may have started but is still going on. Make sure you include the urls to the events.",
+        When you recommend events for the user to attend in the city of interest, make sure to only search for days when the user is most free. \
+        Make sure to include both ongoing and future events, but not events that have ended. \
+        Make sure you include the urls to the events.",
         tools=all_tools,
         # instructions_prefix="Please address the user as Jerry.",
         verbose=True,
         # run_retrieve_sleep_time=1.0,
     )
+    
+    print("assitant created: ", agent._assistant.id)
+    agent.add_message(f"My email is {email}")
 
     response = agent.chat(user_message)
     return response.response
 
+def get_free_time(email, scope: int = 7):
+    """
+    Retrieves the free time slots for a given email address within a specified scope.
+
+    Parameters:
+    - email (str): The email address for which to retrieve free time slots.
+    - scope (int): The number of days to consider for free time slots. Between 0 and 30. Default is 7.
+
+    Returns:
+    - list: A list of dictionaries containing the date and free time for each slot.
+    """
+    
+    url = "http://localhost:3000/free-slot"
+    headers = {'Content-Type': 'application/json'}
+
+    data = {
+        "orgId": "1",
+        "email": email,
+        "scope": scope
+    }
+
+    response = requests.get(url, headers=headers, data=json.dumps(data))
+    slots = response.json().get("freeSlots", [])
+    return slots
 
 def cityTimeZone(city_name:str):
   """Get the time zone for the city of interest"""
@@ -137,7 +170,7 @@ class EventInfoToolSpec(BaseToolSpec):
         Each event is delimited by triple backticks.
 
         Args:
-            query (str): The query to be passed to Google search.
+            query (str): The query to be passed to Google search. This should include dates when users are most free.
         """
         base_url = "https://www.googleapis.com/customsearch/v1"
         params = {
