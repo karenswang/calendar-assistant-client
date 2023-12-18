@@ -15,3 +15,15 @@ How this app uses your [calendar assistant API](https://github.com/tchitrakorn/c
 4. On top of our calendar assistant API, leverages the OpenAI Assistant API as a wrapper to decide which endpoints to call, convert user input to parameters needed by our API, and convert API response to natural language to return to the user. The explore feature also uses llamaindex to use the Google Custom Search API.
 
 Check out demo video [here](https://drive.google.com/file/d/1XThMTPjJc1QKS5Yfwm6dJz_-fGawMcR0/view?usp=sharing)
+
+## Dependencies and tools
+For our natural language processing capabilities, Calendar Assistant primarily uses:
+
+-   llama-index (for LLM and OpenAI)
+-   OpenAI Assistant 
+
+Please see the following for additional information about LLM and LlamaIndex:
+
+-   [LlamaIndex introduction](https://ts.llamaindex.ai/)
+-   [LlamaIndex high-level concepts](https://gpt-index.readthedocs.io/en/latest/getting_started/concepts.html#high-level-concepts)
+-   [OpenAI Assistant](https://platform.openai.com/docs/assistants/overview)

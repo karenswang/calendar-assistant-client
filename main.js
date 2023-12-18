@@ -105,13 +105,19 @@ $('#send_button').on('click', function (e) {
         type: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ message: userMessage, api_key: apiKey, email: email }),
+		timeout: 120000,  // 2 minutes
         success: function(response) {
+			console.log("Success response received");
             showBotMessage(response.response);  // Display the bot's response
         },
         error: function(error) {
-            console.error('Error:', error);
+			console.log("Error: ", error)
+			if (error.statusText === 'timeout') {
+				showBotMessage('Sorry, the results are retrieved, but we have trouble displaying them at this moment.');
+			} else {
             showBotMessage('Sorry, there was an error processing your request.');
         }
+	}
     });
 
 	$('#msg_input').val('');
