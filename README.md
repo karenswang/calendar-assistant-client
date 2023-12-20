@@ -8,7 +8,7 @@ Step to run the project:
 5. create a `.env` file, get your `Custom_Search_Engine_ID` and `Custom_Search_API_Key` from [Google Custom Search](https://developers.google.com/custom-search/v1/overview), or from the repo codespace secrets and put them in there.
 5. open the index.html
 
-How this app uses your [calendar assistant API](https://github.com/tchitrakorn/calendar-assistant):
+How this app uses our [calendar assistant API](https://github.com/tchitrakorn/calendar-assistant) under the hood:
 1. the log in function will send a request to the API /authenticate endpoint to finish the log in process and store crendentials;
 2. the app will send a request to the API /track, /manage, /analytics endpoint to get the list of events, update, create and delete new events, as well as getting a anlytics report for this client (not end user);
 3. for the /explore endpoint, we are directly implementing it on the client at this time because the significant delay in getting the response from the API (as you may notice, the response time is not ideal for the other endpoints as well, but we are working on it)
